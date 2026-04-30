@@ -25,14 +25,82 @@
 						"value":	10
 					}
 				}, {
-					"type":	"MethodCall",
-					"structName":	"fmt",
-					"methodName":	"Println",
-					"arguments":	{
-						"type":	"Argument",
-						"expression":	{
-							"type":	"Identifier",
-							"name":	"x"
+					"type":	"VarDeclAssign",
+					"name":	"y",
+					"type":	{
+						"type":	"Type",
+						"name":	"float64"
+					},
+					"expression":	{
+						"type":	"Literal",
+						"literalType":	"float64"
+					}
+				}, {
+					"type":	"VarDeclAssign",
+					"name":	"z",
+					"type":	{
+						"type":	"Type",
+						"name":	"string"
+					},
+					"expression":	{
+						"type":	"Literal",
+						"literalType":	"string",
+						"value":	"\"hello\""
+					}
+				}, {
+					"type":	"If",
+					"condition":	{
+						"type":	"BinaryOp",
+						"op":	"&&",
+						"left":	{
+							"type":	"BinaryOp",
+							"op":	">",
+							"left":	{
+								"type":	"Identifier",
+								"name":	"x"
+							},
+							"right":	{
+								"type":	"Literal",
+								"literalType":	"int",
+								"value":	5
+							}
+						},
+						"right":	{
+							"type":	"BinaryOp",
+							"op":	"<",
+							"left":	{
+								"type":	"Identifier",
+								"name":	"y"
+							},
+							"right":	{
+								"type":	"Literal",
+								"literalType":	"float64"
+							}
+						}
+					},
+					"thenBranch":	{
+						"type":	"MethodCall",
+						"structName":	"fmt",
+						"methodName":	"Println",
+						"arguments":	{
+							"type":	"Argument",
+							"expression":	{
+								"type":	"Identifier",
+								"name":	"z"
+							}
+						}
+					},
+					"elseBranch":	{
+						"type":	"MethodCall",
+						"structName":	"fmt",
+						"methodName":	"Println",
+						"arguments":	{
+							"type":	"Argument",
+							"expression":	{
+								"type":	"Literal",
+								"literalType":	"string",
+								"value":	"\"error\""
+							}
 						}
 					}
 				}]

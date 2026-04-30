@@ -1,4 +1,4 @@
-; Source: test/test1.go
+; Source: test/test2.go
 ; GoLite stack IC
 MODULE main
 IMPORT "fmt"
@@ -6,8 +6,27 @@ FUNC main
 LOCAL x
 PUSH_INT 10
 STORE x
+LOCAL y
+PUSH_FLOAT 3.14
+STORE y
+LOCAL z
+PUSH_STRING "hello"
+STORE z
 LOAD x
+PUSH_INT 5
+GT
+LOAD y
+PUSH_FLOAT 4
+LT
+AND
+JZ else_0
+LOAD z
 PRINTLN 1
+JMP endif_1
+LABEL else_0
+PUSH_STRING "error"
+PRINTLN 1
+LABEL endif_1
 RET
 ENDFUNC
 HALT
