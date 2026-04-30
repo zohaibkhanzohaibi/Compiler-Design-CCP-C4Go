@@ -1,0 +1,13 @@
+; Source: test/test1.go
+; GoLite stack IC
+MODULE main
+IMPORT "fmt"
+FUNC main
+LOCAL x
+PUSH_INT 10
+STORE x
+LOAD x
+PRINTLN 1
+RET
+ENDFUNC
+HALT

@@ -1,0 +1,40 @@
+{
+	"type":	"Program",
+	"imports":	{
+		"type":	"Import",
+		"path":	"\"fmt\""
+	},
+	"functions":	[{
+			"type":	"Function",
+			"name":	"main",
+			"receiver":	null,
+			"returnType":	{
+				"type":	"Type",
+				"name":	"void"
+			},
+			"body":	[{
+					"type":	"VarDeclAssign",
+					"name":	"x",
+					"type":	{
+						"type":	"Type",
+						"name":	"int"
+					},
+					"expression":	{
+						"type":	"Literal",
+						"literalType":	"int",
+						"value":	10
+					}
+				}, {
+					"type":	"MethodCall",
+					"structName":	"fmt",
+					"methodName":	"Println",
+					"arguments":	{
+						"type":	"Argument",
+						"expression":	{
+							"type":	"Identifier",
+							"name":	"x"
+						}
+					}
+				}]
+		}]
+}

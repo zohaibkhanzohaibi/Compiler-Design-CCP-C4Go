@@ -1,6 +1,6 @@
-#line 2 "build/lex.yy.c"
+#line 1 "build/lex.yy.c"
 
-#line 4 "build/lex.yy.c"
+#line 3 "build/lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -569,8 +569,8 @@ char *yytext;
 extern FILE* yyin; // Declare yyin
 extern void yyerror(const char *s); // Declare yyerror
 
+#line 572 "build/lex.yy.c"
 #line 573 "build/lex.yy.c"
-#line 574 "build/lex.yy.c"
 
 #define INITIAL 0
 
@@ -790,7 +790,7 @@ YY_DECL
 #line 16 "src/lexer/lexer.l"
 
 
-#line 794 "build/lex.yy.c"
+#line 793 "build/lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1150,7 +1150,7 @@ YY_RULE_SETUP
 #line 88 "src/lexer/lexer.l"
 ECHO;
 	YY_BREAK
-#line 1154 "build/lex.yy.c"
+#line 1153 "build/lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 

@@ -639,16 +639,9 @@ int semanticAnalyze(ASTNode *node)
             current = current->next;
         }
 
-        // Second pass: Pre-declare all functions
-        current = node->program.functions;
-        while (current)
-        {
-            if (current->type == NODE_FUNCTION)
-            {
-                preDeclareFunction(current);
-            }
-            current = current->next;
-        }
+        // Second pass: Pre-declare all functions once.
+        // preDeclareFunction walks the linked function list recursively.
+        preDeclareFunction(node->program.functions);
 
         // Third pass: Analyze everything in detail
         current = node->program.functions;

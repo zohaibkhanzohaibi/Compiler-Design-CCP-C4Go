@@ -1,4 +1,4 @@
-# GoLite - A Lightweight Compiler for a Subset of Go 🚀
+# C4Go - A Lightweight Compiler for a Subset of Go 🚀
 
 This project implements a lexer and parser for a subset of the Go programming language. The implementation is designed to handle basic Go constructs and provide a foundation for further development.
 
@@ -135,25 +135,6 @@ The following Go features are **not yet implemented**:
   - Unlike the Go compiler, which automatically inserts semicolons, our lexer and parser require explicit semicolons (`;`) to terminate statements.
   - This decision was made to keep the implementation simple and avoid the complexity of automatic semicolon insertion.
 
-## Usage 🛠️
-
-To use the lexer and parser, compile the code and run it with a Go source file as input:
-
-**Build the Compiler**:
-```sh
-make
-```
-**Run Tests**:
-```sh
-make test
-```
-**Compile a Specific Source File**:
-```sh
-make compile SOURCE_FILE=path/to/your_source_file.go
-```
-
-This will parse the input Go file and print the lexer and parser output along with AST generated and semantic errors are reported if any to the console.
-
 ## Future Work 🔮
 
 The next steps include:
@@ -161,10 +142,4 @@ The next steps include:
 - Developing code generation capabilities.
 - Enhancing error handling and recovery mechanisms.
 
-## Contributing 🤝
 
-Contributions are welcome! Please open an issue or submit a pull request if you have any improvements or bug fixes.
-
-## License 📜
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>  // For mkdir
+#ifdef _WIN32
+#include <direct.h>
+#endif
 
 // Forward declaration of astToJSON
 cJSON* astToJSON(ASTNode* node);
@@ -12,7 +15,11 @@ cJSON* astToJSON(ASTNode* node);
 void ensureBuildFolderExists() {
     struct stat st = {0};
     if (stat("build", &st) == -1) {
+#ifdef _WIN32
+        mkdir("build");
+#else
         mkdir("build", 0700); // Create build directory with read/write/execute permissions
+#endif
     }
 }
 
@@ -50,6 +57,7 @@ ASTNode* createProgramNode(ASTNode* imports, ASTNode* type_decls, ASTNode* funct
 ASTNode* createFunctionNode(char* name, ASTNode* receiver, ASTNode* parameters, ASTNode* return_type, ASTNode* body, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_FUNCTION;
+    node->next = next;
     node->function.name = strdup(name);
     node->function.receiver = receiver; // Set the receiver
     node->function.parameters = parameters;
@@ -158,6 +166,7 @@ ASTNode* createInterfaceNode(char* name, ASTNode* methods) {
 ASTNode* createImportNode(char* path, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_IMPORT;
+    node->next = next;
     node->import.path = strdup(path);
     node->import.next = next;
     return node;
@@ -167,6 +176,7 @@ ASTNode* createImportNode(char* path, ASTNode* next) {
 ASTNode* createFieldNode(char* name, ASTNode* type, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_FIELD;
+    node->next = next;
     node->field.name = strdup(name);
     node->field.type = type;
     node->field.next = next;
@@ -177,6 +187,7 @@ ASTNode* createFieldNode(char* name, ASTNode* type, ASTNode* next) {
 ASTNode* createMethodNode(char* name, ASTNode* parameters, ASTNode* returnType, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_METHOD;
+    node->next = next;
     node->method.name = strdup(name);
     node->method.parameters = parameters;
     node->method.returnType = returnType;
@@ -198,6 +209,7 @@ ASTNode* createReceiverNode(char* name, char* type) {
 ASTNode* createParameterNode(char* name, ASTNode* type, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_PARAMETER;
+    node->next = next;
     node->parameter.name = strdup(name);
     node->parameter.type = type;
     node->parameter.next = next;
@@ -208,6 +220,7 @@ ASTNode* createParameterNode(char* name, ASTNode* type, ASTNode* next) {
 ASTNode* createReturnNode(ASTNode* expression, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_RETURN;
+    node->next = next;
     node->returnStmt.expression = expression;
     node->returnStmt.next = next;
     return node;
@@ -217,6 +230,7 @@ ASTNode* createReturnNode(ASTNode* expression, ASTNode* next) {
 ASTNode* createVarDeclNode(char* name, ASTNode* type, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_VAR_DECL;
+    node->next = next;
     node->varDecl.name = strdup(name);
     node->varDecl.type = type;
     node->varDecl.next = next;
@@ -227,6 +241,7 @@ ASTNode* createVarDeclNode(char* name, ASTNode* type, ASTNode* next) {
 ASTNode* createVarDeclAssignNode(char* name, ASTNode* type, ASTNode* expression, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_VAR_DECL_ASSIGN;
+    node->next = next;
     node->varDeclAssign.name = strdup(name);
     node->varDeclAssign.type = type;
     node->varDeclAssign.expression = expression;
@@ -238,6 +253,7 @@ ASTNode* createVarDeclAssignNode(char* name, ASTNode* type, ASTNode* expression,
 ASTNode* createAssignNode(char* name, ASTNode* expression, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_ASSIGN;
+    node->next = next;
     node->assign.name = strdup(name);
     node->assign.expression = expression;
     node->assign.next = next;
@@ -248,6 +264,7 @@ ASTNode* createAssignNode(char* name, ASTNode* expression, ASTNode* next) {
 ASTNode* createStructFieldAssignNode(char* structName, char* fieldName, ASTNode* expression, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_STRUCT_FIELD_ASSIGN;
+    node->next = next;
     node->structFieldAssign.structName = strdup(structName);
     node->structFieldAssign.fieldName = strdup(fieldName);
     node->structFieldAssign.expression = expression;
@@ -259,6 +276,7 @@ ASTNode* createStructFieldAssignNode(char* structName, char* fieldName, ASTNode*
 ASTNode* createMethodCallNode(char* structName, char* methodName, ASTNode* arguments, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_METHOD_CALL;
+    node->next = next;
     node->methodCall.structName = strdup(structName);
     node->methodCall.methodName = strdup(methodName);
     node->methodCall.arguments = arguments;
@@ -270,6 +288,7 @@ ASTNode* createMethodCallNode(char* structName, char* methodName, ASTNode* argum
 ASTNode* createStructFieldAccessNode(char* structName, char* fieldName) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_STRUCT_FIELD_ACCESS;
+    node->next = NULL;
     node->structFieldAccess.structName = strdup(structName);
     node->structFieldAccess.fieldName = strdup(fieldName);
     return node;
@@ -279,6 +298,7 @@ ASTNode* createStructFieldAccessNode(char* structName, char* fieldName) {
 ASTNode* createMapTypeNode(ASTNode* keyType, ASTNode* valueType) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_MAP_TYPE;
+    node->next = NULL;
     node->mapType.keyType = keyType;
     node->mapType.valueType = valueType;
     return node;
@@ -288,6 +308,7 @@ ASTNode* createMapTypeNode(ASTNode* keyType, ASTNode* valueType) {
 ASTNode* createSliceTypeNode(ASTNode* elementType) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_SLICE_TYPE;
+    node->next = NULL;
     node->sliceType.elementType = elementType;
     return node;
 }
@@ -296,6 +317,7 @@ ASTNode* createSliceTypeNode(ASTNode* elementType) {
 ASTNode* createChanTypeNode(ASTNode* elementType) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_CHAN_TYPE;
+    node->next = NULL;
     node->chanType.elementType = elementType;
     return node;
 }
@@ -313,6 +335,7 @@ ASTNode* createTypeNode(char* type) {
 ASTNode* createArgumentNode(ASTNode* expression, ASTNode* next) {
     ASTNode* node = (ASTNode*)malloc(sizeof(ASTNode));
     node->type = NODE_ARGUMENT;
+    node->next = next;
     node->argument.expression = expression;
     node->argument.next = next;
     return node;

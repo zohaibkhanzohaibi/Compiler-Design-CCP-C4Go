@@ -71,6 +71,7 @@
 
 #include "ast.h"
 #include "semantic.h"
+#include "codegen.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -84,13 +85,14 @@
 extern int yylineno; // Declare yylineno from lexer
 extern FILE* yyin;   // Declare yyin from lexer
 extern int yylex();  // Declare yylex
+extern char** global_argv;
 
 // Define yyerror
 void yyerror(const char *s) {
     fprintf(stderr, COLOR_RED "Error at line %d: %s\n" COLOR_RESET, yylineno, s);
 }
 
-#line 94 "build/parser.tab.c"
+#line 96 "build/parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -578,14 +580,14 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    62,    62,    78,    79,    88,    89,    94,   103,   104,
-     113,   114,   122,   124,   126,   128,   130,   132,   134,   136,
-     138,   144,   145,   155,   156,   165,   166,   172,   173,   178,
-     187,   188,   198,   203,   208,   213,   218,   223,   228,   233,
-     238,   245,   254,   255,   257,   262,   268,   274,   279,   285,
-     291,   296,   301,   306,   311,   316,   321,   326,   331,   336,
-     341,   346,   351,   356,   361,   366,   371,   376,   381,   386,
-     391,   396
+       0,    64,    64,    90,    91,   100,   101,   107,   117,   118,
+     127,   128,   136,   138,   140,   142,   144,   146,   148,   150,
+     152,   158,   159,   169,   170,   179,   180,   186,   187,   192,
+     201,   202,   212,   217,   222,   227,   232,   237,   242,   247,
+     252,   259,   268,   269,   271,   276,   282,   288,   293,   299,
+     305,   310,   315,   320,   325,   330,   335,   340,   345,   350,
+     355,   360,   365,   370,   375,   380,   385,   390,   395,   400,
+     405,   410
 };
 #endif
 
@@ -1295,7 +1297,7 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* program: PACKAGE IDENTIFIER SEMICOLON imports type_decls functions  */
-#line 63 "src/parser/parser.y"
+#line 65 "src/parser/parser.y"
     { 
       (yyval.node) = createProgramNode((yyvsp[-2].node), (yyvsp[-1].node), (yyvsp[0].node));
       if (semanticAnalyze((yyval.node))) { // perform semantic analysis
@@ -1306,576 +1308,588 @@ yyreduce:
       printAST((yyval.node), 0, 0, NULL); // Print AST for debugging
       printAST((yyval.node), 0, 1, "ast.json"); // Print AST to JSON file
       printf(COLOR_GREEN "PARSER: AST created successfully\n" COLOR_RESET);
+
+        CodegenContext* context = createCodegenContext(
+          (global_argv && global_argv[1]) ? global_argv[1] : "input.go",
+          "output.ic");
+        if (context && generateCode((yyval.node), context) == 0) {
+          printf(COLOR_GREEN "BACKEND: Stack IC written to output.ic\n" COLOR_RESET);
+        } else {
+          fprintf(stderr, COLOR_RED "BACKEND: Code generation failed\n" COLOR_RESET);
+        }
+        freeCodegenContext(context);
     }
-#line 1311 "build/parser.tab.c"
+#line 1323 "build/parser.tab.c"
     break;
 
   case 3: /* imports: %empty  */
-#line 78 "src/parser/parser.y"
+#line 90 "src/parser/parser.y"
     { (yyval.node) = NULL; }
-#line 1317 "build/parser.tab.c"
+#line 1329 "build/parser.tab.c"
     break;
 
   case 4: /* imports: IMPORT STRING SEMICOLON imports  */
-#line 80 "src/parser/parser.y"
+#line 92 "src/parser/parser.y"
     { 
       (yyval.node) = createImportNode((yyvsp[-2].str), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Import statement parsed\n" COLOR_RESET); 
     }
-#line 1326 "build/parser.tab.c"
+#line 1338 "build/parser.tab.c"
     break;
 
   case 5: /* type_decls: %empty  */
-#line 88 "src/parser/parser.y"
+#line 100 "src/parser/parser.y"
     { (yyval.node) = NULL; }
-#line 1332 "build/parser.tab.c"
+#line 1344 "build/parser.tab.c"
     break;
 
   case 6: /* type_decls: TYPE IDENTIFIER STRUCT LBRACE field_decls RBRACE SEMICOLON type_decls  */
-#line 90 "src/parser/parser.y"
+#line 102 "src/parser/parser.y"
     { 
        (yyval.node) = createStructNode((yyvsp[-6].str), (yyvsp[-3].node));
+       (yyval.node)->next = (yyvsp[0].node);
        printf(COLOR_BLUE "PARSER: Struct declaration parsed\n" COLOR_RESET); 
     }
-#line 1341 "build/parser.tab.c"
+#line 1354 "build/parser.tab.c"
     break;
 
   case 7: /* type_decls: TYPE IDENTIFIER INTERFACE LBRACE method_decls RBRACE SEMICOLON type_decls  */
-#line 95 "src/parser/parser.y"
+#line 108 "src/parser/parser.y"
     { 
        (yyval.node) = createInterfaceNode((yyvsp[-6].str), (yyvsp[-3].node));
+       (yyval.node)->next = (yyvsp[0].node);
        printf(COLOR_BLUE "PARSER: Interface declaration parsed\n" COLOR_RESET); 
     }
-#line 1350 "build/parser.tab.c"
+#line 1364 "build/parser.tab.c"
     break;
 
   case 8: /* field_decls: %empty  */
-#line 103 "src/parser/parser.y"
+#line 117 "src/parser/parser.y"
     { (yyval.node) = NULL; }
-#line 1356 "build/parser.tab.c"
+#line 1370 "build/parser.tab.c"
     break;
 
   case 9: /* field_decls: IDENTIFIER type SEMICOLON field_decls  */
-#line 105 "src/parser/parser.y"
+#line 119 "src/parser/parser.y"
     { 
       (yyval.node) = createFieldNode((yyvsp[-3].str), (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Field declaration parsed\n" COLOR_RESET); 
     }
-#line 1365 "build/parser.tab.c"
+#line 1379 "build/parser.tab.c"
     break;
 
   case 10: /* method_decls: %empty  */
-#line 113 "src/parser/parser.y"
+#line 127 "src/parser/parser.y"
     { (yyval.node) = NULL; }
-#line 1371 "build/parser.tab.c"
+#line 1385 "build/parser.tab.c"
     break;
 
   case 11: /* method_decls: IDENTIFIER LPAREN parameters RPAREN type SEMICOLON method_decls  */
-#line 115 "src/parser/parser.y"
+#line 129 "src/parser/parser.y"
     { 
       (yyval.node) = createMethodNode((yyvsp[-6].str), (yyvsp[-4].node), (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Method declaration parsed\n" COLOR_RESET); 
     }
-#line 1380 "build/parser.tab.c"
+#line 1394 "build/parser.tab.c"
     break;
 
   case 12: /* type: INT_TYPE  */
-#line 123 "src/parser/parser.y"
+#line 137 "src/parser/parser.y"
     { (yyval.node) = createTypeNode("int"); }
-#line 1386 "build/parser.tab.c"
+#line 1400 "build/parser.tab.c"
     break;
 
   case 13: /* type: FLOAT64_TYPE  */
-#line 125 "src/parser/parser.y"
+#line 139 "src/parser/parser.y"
     { (yyval.node) = createTypeNode("float64"); }
-#line 1392 "build/parser.tab.c"
+#line 1406 "build/parser.tab.c"
     break;
 
   case 14: /* type: STRING_TYPE  */
-#line 127 "src/parser/parser.y"
+#line 141 "src/parser/parser.y"
     { (yyval.node) = createTypeNode("string"); }
-#line 1398 "build/parser.tab.c"
+#line 1412 "build/parser.tab.c"
     break;
 
   case 15: /* type: BOOL_TYPE  */
-#line 129 "src/parser/parser.y"
+#line 143 "src/parser/parser.y"
     { (yyval.node) = createTypeNode("bool"); }
-#line 1404 "build/parser.tab.c"
+#line 1418 "build/parser.tab.c"
     break;
 
   case 16: /* type: VOID_TYPE  */
-#line 131 "src/parser/parser.y"
+#line 145 "src/parser/parser.y"
     { (yyval.node) = createTypeNode("void"); }
-#line 1410 "build/parser.tab.c"
+#line 1424 "build/parser.tab.c"
     break;
 
   case 17: /* type: MAP LBRACE type RBRACE type  */
-#line 133 "src/parser/parser.y"
+#line 147 "src/parser/parser.y"
     { (yyval.node) = createMapTypeNode((yyvsp[-2].node), (yyvsp[0].node)); }
-#line 1416 "build/parser.tab.c"
+#line 1430 "build/parser.tab.c"
     break;
 
   case 18: /* type: SLICE LBRACE RBRACE type  */
-#line 135 "src/parser/parser.y"
+#line 149 "src/parser/parser.y"
     { (yyval.node) = createSliceTypeNode((yyvsp[0].node)); }
-#line 1422 "build/parser.tab.c"
+#line 1436 "build/parser.tab.c"
     break;
 
   case 19: /* type: CHAN type  */
-#line 137 "src/parser/parser.y"
+#line 151 "src/parser/parser.y"
     { (yyval.node) = createChanTypeNode((yyvsp[0].node)); }
-#line 1428 "build/parser.tab.c"
+#line 1442 "build/parser.tab.c"
     break;
 
   case 20: /* type: IDENTIFIER  */
-#line 139 "src/parser/parser.y"
+#line 153 "src/parser/parser.y"
     { (yyval.node) = createTypeNode((yyvsp[0].str)); }
-#line 1434 "build/parser.tab.c"
+#line 1448 "build/parser.tab.c"
     break;
 
   case 21: /* functions: %empty  */
-#line 144 "src/parser/parser.y"
+#line 158 "src/parser/parser.y"
     { (yyval.node) = NULL; }
-#line 1440 "build/parser.tab.c"
+#line 1454 "build/parser.tab.c"
     break;
 
   case 22: /* functions: FUNC receiver IDENTIFIER LPAREN parameters RPAREN return_type LBRACE statements RBRACE functions  */
-#line 146 "src/parser/parser.y"
+#line 160 "src/parser/parser.y"
     {
         ASTNode* newFunction = createFunctionNode((yyvsp[-8].str), (yyvsp[-9].node), (yyvsp[-6].node), (yyvsp[-4].node), (yyvsp[-2].node), (yyvsp[0].node));
         printf(COLOR_BLUE "PARSER: Function parsed : %s\n" COLOR_RESET, (yyvsp[-8].str));
         (yyval.node) = newFunction;
     }
-#line 1450 "build/parser.tab.c"
+#line 1464 "build/parser.tab.c"
     break;
 
   case 23: /* receiver: %empty  */
-#line 155 "src/parser/parser.y"
+#line 169 "src/parser/parser.y"
     { (yyval.node) = NULL; }
-#line 1456 "build/parser.tab.c"
+#line 1470 "build/parser.tab.c"
     break;
 
   case 24: /* receiver: LPAREN IDENTIFIER IDENTIFIER RPAREN  */
-#line 157 "src/parser/parser.y"
+#line 171 "src/parser/parser.y"
     {
       (yyval.node) = createReceiverNode((yyvsp[-2].str), (yyvsp[-1].str));
       printf(COLOR_BLUE "PARSER: Receiver parsed\n" COLOR_RESET);
     }
-#line 1465 "build/parser.tab.c"
+#line 1479 "build/parser.tab.c"
     break;
 
   case 25: /* return_type: %empty  */
-#line 165 "src/parser/parser.y"
+#line 179 "src/parser/parser.y"
     { (yyval.node) = createTypeNode("void"); }
-#line 1471 "build/parser.tab.c"
+#line 1485 "build/parser.tab.c"
     break;
 
   case 26: /* return_type: type  */
-#line 167 "src/parser/parser.y"
+#line 181 "src/parser/parser.y"
     { (yyval.node) = (yyvsp[0].node); }
-#line 1477 "build/parser.tab.c"
+#line 1491 "build/parser.tab.c"
     break;
 
   case 27: /* parameters: %empty  */
-#line 172 "src/parser/parser.y"
+#line 186 "src/parser/parser.y"
     { (yyval.node) = NULL; }
-#line 1483 "build/parser.tab.c"
+#line 1497 "build/parser.tab.c"
     break;
 
   case 28: /* parameters: IDENTIFIER type COMMA parameters  */
-#line 174 "src/parser/parser.y"
+#line 188 "src/parser/parser.y"
     { 
       (yyval.node) = createParameterNode((yyvsp[-3].str), (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Parameter parsed\n" COLOR_RESET); 
     }
-#line 1492 "build/parser.tab.c"
+#line 1506 "build/parser.tab.c"
     break;
 
   case 29: /* parameters: IDENTIFIER type  */
-#line 179 "src/parser/parser.y"
+#line 193 "src/parser/parser.y"
     { 
       (yyval.node) = createParameterNode((yyvsp[-1].str), (yyvsp[0].node), NULL);
       printf(COLOR_BLUE "PARSER: Parameter parsed\n" COLOR_RESET); 
     }
-#line 1501 "build/parser.tab.c"
+#line 1515 "build/parser.tab.c"
     break;
 
   case 30: /* statements: %empty  */
-#line 187 "src/parser/parser.y"
+#line 201 "src/parser/parser.y"
     { (yyval.node) = NULL; }
-#line 1507 "build/parser.tab.c"
+#line 1521 "build/parser.tab.c"
     break;
 
   case 31: /* statements: statement statements  */
-#line 189 "src/parser/parser.y"
+#line 203 "src/parser/parser.y"
     { 
       if ((yyvsp[-1].node) != NULL && (yyvsp[0].node) != NULL) {
         (yyvsp[-1].node)->next = (yyvsp[0].node);
       }
       (yyval.node) = (yyvsp[-1].node);
     }
-#line 1518 "build/parser.tab.c"
+#line 1532 "build/parser.tab.c"
     break;
 
   case 32: /* statement: RETURN expression SEMICOLON  */
-#line 199 "src/parser/parser.y"
+#line 213 "src/parser/parser.y"
     { 
       (yyval.node) = createReturnNode((yyvsp[-1].node), NULL);
       printf(COLOR_BLUE "PARSER: Return statement parsed\n" COLOR_RESET); 
     }
-#line 1527 "build/parser.tab.c"
+#line 1541 "build/parser.tab.c"
     break;
 
   case 33: /* statement: VAR IDENTIFIER type SEMICOLON  */
-#line 204 "src/parser/parser.y"
+#line 218 "src/parser/parser.y"
     { 
       (yyval.node) = createVarDeclNode((yyvsp[-2].str), (yyvsp[-1].node), NULL);
       printf(COLOR_BLUE "PARSER: Variable declaration parsed\n" COLOR_RESET); 
     }
-#line 1536 "build/parser.tab.c"
+#line 1550 "build/parser.tab.c"
     break;
 
   case 34: /* statement: VAR IDENTIFIER type ASSIGN expression SEMICOLON  */
-#line 209 "src/parser/parser.y"
+#line 223 "src/parser/parser.y"
     { 
       (yyval.node) = createVarDeclAssignNode((yyvsp[-4].str), (yyvsp[-3].node), (yyvsp[-1].node), NULL);
       printf(COLOR_BLUE "PARSER: Variable declaration with assignment parsed\n" COLOR_RESET); 
     }
-#line 1545 "build/parser.tab.c"
+#line 1559 "build/parser.tab.c"
     break;
 
   case 35: /* statement: IDENTIFIER ASSIGN expression SEMICOLON  */
-#line 214 "src/parser/parser.y"
+#line 228 "src/parser/parser.y"
     { 
       (yyval.node) = createAssignNode((yyvsp[-3].str), (yyvsp[-1].node), NULL);
       printf(COLOR_BLUE "PARSER: Assignment statement parsed\n" COLOR_RESET); 
     }
-#line 1554 "build/parser.tab.c"
+#line 1568 "build/parser.tab.c"
     break;
 
   case 36: /* statement: IDENTIFIER DOT IDENTIFIER ASSIGN expression SEMICOLON  */
-#line 219 "src/parser/parser.y"
+#line 233 "src/parser/parser.y"
     { 
       (yyval.node) = createStructFieldAssignNode((yyvsp[-5].str), (yyvsp[-3].str), (yyvsp[-1].node), NULL);
       printf(COLOR_BLUE "PARSER: Struct field assignment parsed\n" COLOR_RESET); 
     }
-#line 1563 "build/parser.tab.c"
+#line 1577 "build/parser.tab.c"
     break;
 
   case 37: /* statement: IDENTIFIER DOT IDENTIFIER LPAREN arguments RPAREN SEMICOLON  */
-#line 224 "src/parser/parser.y"
+#line 238 "src/parser/parser.y"
     { 
       (yyval.node) = createMethodCallNode((yyvsp[-6].str), (yyvsp[-4].str), (yyvsp[-2].node), NULL);
       printf(COLOR_BLUE "PARSER: Method call parsed\n" COLOR_RESET); 
     }
-#line 1572 "build/parser.tab.c"
+#line 1586 "build/parser.tab.c"
     break;
 
   case 38: /* statement: IDENTIFIER LPAREN arguments RPAREN SEMICOLON  */
-#line 229 "src/parser/parser.y"
+#line 243 "src/parser/parser.y"
     {
       (yyval.node) = createCallNode((yyvsp[-4].str), (yyvsp[-2].node));
       printf(COLOR_BLUE "PARSER: Function call parsed\n" COLOR_RESET); 
     }
-#line 1581 "build/parser.tab.c"
+#line 1595 "build/parser.tab.c"
     break;
 
   case 39: /* statement: IF expression LBRACE statements RBRACE ELSE LBRACE statements RBRACE  */
-#line 234 "src/parser/parser.y"
+#line 248 "src/parser/parser.y"
     { 
       (yyval.node) = createIfNode((yyvsp[-7].node), (yyvsp[-5].node), (yyvsp[-1].node));
       printf(COLOR_BLUE "PARSER: If-else statement parsed\n" COLOR_RESET); 
     }
-#line 1590 "build/parser.tab.c"
+#line 1604 "build/parser.tab.c"
     break;
 
   case 40: /* statement: FOR IDENTIFIER DECLARE_ASSIGN expression SEMICOLON expression SEMICOLON IDENTIFIER INCREMENT LBRACE statements RBRACE  */
-#line 239 "src/parser/parser.y"
+#line 253 "src/parser/parser.y"
     { 
       // Create an AST node for the increment operation
       ASTNode* incrementNode = createBinaryOpNode("+", createIdentifierNode((yyvsp[-4].str)), createLiteralNode("int", &(int){1}));
       (yyval.node) = createForNode((yyvsp[-8].node), (yyvsp[-6].node), incrementNode, (yyvsp[-1].node));
       printf(COLOR_BLUE "PARSER: For loop parsed\n" COLOR_RESET); 
     }
-#line 1601 "build/parser.tab.c"
+#line 1615 "build/parser.tab.c"
     break;
 
   case 41: /* statement: error SEMICOLON  */
-#line 246 "src/parser/parser.y"
+#line 260 "src/parser/parser.y"
     { 
       printf(COLOR_RED "PARSER: Error recovery\n" COLOR_RESET); 
       (yyval.node) = NULL;
     }
-#line 1610 "build/parser.tab.c"
+#line 1624 "build/parser.tab.c"
     break;
 
   case 42: /* arguments: %empty  */
-#line 254 "src/parser/parser.y"
+#line 268 "src/parser/parser.y"
     { (yyval.node) = NULL; }
-#line 1616 "build/parser.tab.c"
+#line 1630 "build/parser.tab.c"
     break;
 
   case 43: /* arguments: expression  */
-#line 256 "src/parser/parser.y"
+#line 270 "src/parser/parser.y"
     { (yyval.node) = createArgumentNode((yyvsp[0].node), NULL); }
-#line 1622 "build/parser.tab.c"
+#line 1636 "build/parser.tab.c"
     break;
 
   case 44: /* arguments: expression COMMA arguments  */
-#line 258 "src/parser/parser.y"
+#line 272 "src/parser/parser.y"
     { (yyval.node) = createArgumentNode((yyvsp[-2].node), (yyvsp[0].node)); }
-#line 1628 "build/parser.tab.c"
+#line 1642 "build/parser.tab.c"
     break;
 
   case 45: /* expression: INTEGER  */
-#line 263 "src/parser/parser.y"
+#line 277 "src/parser/parser.y"
     { 
       int value = (yyvsp[0].num);
       (yyval.node) = createLiteralNode("int", &value);
       printf(COLOR_BLUE "PARSER: Integer expression parsed\n" COLOR_RESET); 
     }
-#line 1638 "build/parser.tab.c"
+#line 1652 "build/parser.tab.c"
     break;
 
   case 46: /* expression: FLOAT  */
-#line 269 "src/parser/parser.y"
+#line 283 "src/parser/parser.y"
     { 
       double value = (yyvsp[0].fnum);
       (yyval.node) = createLiteralNode("float", &value);
       printf(COLOR_BLUE "PARSER: Float expression parsed\n" COLOR_RESET); 
     }
-#line 1648 "build/parser.tab.c"
+#line 1662 "build/parser.tab.c"
     break;
 
   case 47: /* expression: STRING  */
-#line 275 "src/parser/parser.y"
+#line 289 "src/parser/parser.y"
     { 
       (yyval.node) = createLiteralNode("string", (yyvsp[0].str));
       printf(COLOR_BLUE "PARSER: String expression parsed\n" COLOR_RESET); 
     }
-#line 1657 "build/parser.tab.c"
+#line 1671 "build/parser.tab.c"
     break;
 
   case 48: /* expression: TRUE  */
-#line 280 "src/parser/parser.y"
+#line 294 "src/parser/parser.y"
     { 
       bool value = true;
       (yyval.node) = createLiteralNode("bool", &value);
       printf(COLOR_BLUE "PARSER: True expression parsed\n" COLOR_RESET); 
     }
-#line 1667 "build/parser.tab.c"
+#line 1681 "build/parser.tab.c"
     break;
 
   case 49: /* expression: FALSE  */
-#line 286 "src/parser/parser.y"
+#line 300 "src/parser/parser.y"
     { 
       bool value = false;
       (yyval.node) = createLiteralNode("bool", &value);
       printf(COLOR_BLUE "PARSER: False expression parsed\n" COLOR_RESET); 
     }
-#line 1677 "build/parser.tab.c"
+#line 1691 "build/parser.tab.c"
     break;
 
   case 50: /* expression: IDENTIFIER  */
-#line 292 "src/parser/parser.y"
+#line 306 "src/parser/parser.y"
     { 
       (yyval.node) = createIdentifierNode((yyvsp[0].str));
       printf(COLOR_BLUE "PARSER: Identifier expression parsed\n" COLOR_RESET); 
     }
-#line 1686 "build/parser.tab.c"
+#line 1700 "build/parser.tab.c"
     break;
 
   case 51: /* expression: IDENTIFIER DOT IDENTIFIER  */
-#line 297 "src/parser/parser.y"
+#line 311 "src/parser/parser.y"
     { 
       (yyval.node) = createStructFieldAccessNode((yyvsp[-2].str), (yyvsp[0].str));
       printf(COLOR_BLUE "PARSER: Struct field access parsed\n" COLOR_RESET); 
     }
-#line 1695 "build/parser.tab.c"
+#line 1709 "build/parser.tab.c"
     break;
 
   case 52: /* expression: IDENTIFIER DOT IDENTIFIER LPAREN arguments RPAREN  */
-#line 302 "src/parser/parser.y"
+#line 316 "src/parser/parser.y"
     { 
       (yyval.node) = createMethodCallNode((yyvsp[-5].str), (yyvsp[-3].str), (yyvsp[-1].node), NULL);
       printf(COLOR_BLUE "PARSER: Method call parsed\n" COLOR_RESET); 
     }
-#line 1704 "build/parser.tab.c"
+#line 1718 "build/parser.tab.c"
     break;
 
   case 53: /* expression: IDENTIFIER LPAREN arguments RPAREN  */
-#line 307 "src/parser/parser.y"
+#line 321 "src/parser/parser.y"
     { 
       (yyval.node) = createCallNode((yyvsp[-3].str), (yyvsp[-1].node));
       printf(COLOR_BLUE "PARSER: Function call parsed\n" COLOR_RESET); 
     }
-#line 1713 "build/parser.tab.c"
+#line 1727 "build/parser.tab.c"
     break;
 
   case 54: /* expression: expression PLUS expression  */
-#line 312 "src/parser/parser.y"
+#line 326 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("+", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Addition expression parsed\n" COLOR_RESET); 
     }
-#line 1722 "build/parser.tab.c"
+#line 1736 "build/parser.tab.c"
     break;
 
   case 55: /* expression: expression MINUS expression  */
-#line 317 "src/parser/parser.y"
+#line 331 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("-", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Subtraction expression parsed\n" COLOR_RESET); 
     }
-#line 1731 "build/parser.tab.c"
+#line 1745 "build/parser.tab.c"
     break;
 
   case 56: /* expression: expression MULTIPLY expression  */
-#line 322 "src/parser/parser.y"
+#line 336 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("*", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Multiplication expression parsed\n" COLOR_RESET); 
     }
-#line 1740 "build/parser.tab.c"
+#line 1754 "build/parser.tab.c"
     break;
 
   case 57: /* expression: expression DIVIDE expression  */
-#line 327 "src/parser/parser.y"
+#line 341 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("/", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Division expression parsed\n" COLOR_RESET); 
     }
-#line 1749 "build/parser.tab.c"
+#line 1763 "build/parser.tab.c"
     break;
 
   case 58: /* expression: expression EQ expression  */
-#line 332 "src/parser/parser.y"
+#line 346 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("==", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Equality expression parsed\n" COLOR_RESET); 
     }
-#line 1758 "build/parser.tab.c"
+#line 1772 "build/parser.tab.c"
     break;
 
   case 59: /* expression: expression NEQ expression  */
-#line 337 "src/parser/parser.y"
+#line 351 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("!=", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Inequality expression parsed\n" COLOR_RESET); 
     }
-#line 1767 "build/parser.tab.c"
+#line 1781 "build/parser.tab.c"
     break;
 
   case 60: /* expression: expression LT expression  */
-#line 342 "src/parser/parser.y"
+#line 356 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("<", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Less-than expression parsed\n" COLOR_RESET); 
     }
-#line 1776 "build/parser.tab.c"
+#line 1790 "build/parser.tab.c"
     break;
 
   case 61: /* expression: expression GT expression  */
-#line 347 "src/parser/parser.y"
+#line 361 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode(">", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Greater-than expression parsed\n" COLOR_RESET); 
     }
-#line 1785 "build/parser.tab.c"
+#line 1799 "build/parser.tab.c"
     break;
 
   case 62: /* expression: expression LTE expression  */
-#line 352 "src/parser/parser.y"
+#line 366 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("<=", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Less-than-or-equal expression parsed\n" COLOR_RESET); 
     }
-#line 1794 "build/parser.tab.c"
+#line 1808 "build/parser.tab.c"
     break;
 
   case 63: /* expression: expression GTE expression  */
-#line 357 "src/parser/parser.y"
+#line 371 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode(">=", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Greater-than-or-equal expression parsed\n" COLOR_RESET); 
     }
-#line 1803 "build/parser.tab.c"
+#line 1817 "build/parser.tab.c"
     break;
 
   case 64: /* expression: expression AND expression  */
-#line 362 "src/parser/parser.y"
+#line 376 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("&&", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Logical AND expression parsed\n" COLOR_RESET); 
     }
-#line 1812 "build/parser.tab.c"
+#line 1826 "build/parser.tab.c"
     break;
 
   case 65: /* expression: expression OR expression  */
-#line 367 "src/parser/parser.y"
+#line 381 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("||", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Logical OR expression parsed\n" COLOR_RESET); 
     }
-#line 1821 "build/parser.tab.c"
+#line 1835 "build/parser.tab.c"
     break;
 
   case 66: /* expression: expression LSHIFT expression  */
-#line 372 "src/parser/parser.y"
+#line 386 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("<<", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Left shift expression parsed\n" COLOR_RESET); 
     }
-#line 1830 "build/parser.tab.c"
+#line 1844 "build/parser.tab.c"
     break;
 
   case 67: /* expression: expression RSHIFT expression  */
-#line 377 "src/parser/parser.y"
+#line 391 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode(">>", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Right shift expression parsed\n" COLOR_RESET); 
     }
-#line 1839 "build/parser.tab.c"
+#line 1853 "build/parser.tab.c"
     break;
 
   case 68: /* expression: expression BITAND expression  */
-#line 382 "src/parser/parser.y"
+#line 396 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("&", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Bitwise AND expression parsed\n" COLOR_RESET); 
     }
-#line 1848 "build/parser.tab.c"
+#line 1862 "build/parser.tab.c"
     break;
 
   case 69: /* expression: expression BITOR expression  */
-#line 387 "src/parser/parser.y"
+#line 401 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("|", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Bitwise OR expression parsed\n" COLOR_RESET); 
     }
-#line 1857 "build/parser.tab.c"
+#line 1871 "build/parser.tab.c"
     break;
 
   case 70: /* expression: expression BITXOR expression  */
-#line 392 "src/parser/parser.y"
+#line 406 "src/parser/parser.y"
     { 
       (yyval.node) = createBinaryOpNode("^", (yyvsp[-2].node), (yyvsp[0].node));
       printf(COLOR_BLUE "PARSER: Bitwise XOR expression parsed\n" COLOR_RESET); 
     }
-#line 1866 "build/parser.tab.c"
+#line 1880 "build/parser.tab.c"
     break;
 
   case 71: /* expression: LPAREN expression RPAREN  */
-#line 397 "src/parser/parser.y"
+#line 411 "src/parser/parser.y"
     { 
       (yyval.node) = (yyvsp[-1].node);
       printf(COLOR_BLUE "PARSER: Parenthesized expression parsed\n" COLOR_RESET); 
     }
-#line 1875 "build/parser.tab.c"
+#line 1889 "build/parser.tab.c"
     break;
 
 
-#line 1879 "build/parser.tab.c"
+#line 1893 "build/parser.tab.c"
 
       default: break;
     }
@@ -2068,10 +2082,13 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 403 "src/parser/parser.y"
+#line 417 "src/parser/parser.y"
 
+
+char** global_argv;
 
 int main(int argc, char **argv) {
+  global_argv = argv;
     if (argc > 1) {
         FILE *file = fopen(argv[1], "r");
         if (!file) {
@@ -2080,6 +2097,6 @@ int main(int argc, char **argv) {
         }
         yyin = file;
     }
-    yyparse();
-    return 0;
+      int parseResult = yyparse();
+      return parseResult || backendErrorFlag;
 }

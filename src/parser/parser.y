@@ -1,6 +1,7 @@
 %{
 #include "ast.h"
 #include "semantic.h"
+#include "codegen.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,6 +15,7 @@
 extern int yylineno; // Declare yylineno from lexer
 extern FILE* yyin;   // Declare yyin from lexer
 extern int yylex();  // Declare yylex
+extern char** global_argv;
 
 // Define yyerror
 void yyerror(const char *s) {
@@ -70,6 +72,16 @@ program:
       printAST($$, 0, 0, NULL); // Print AST for debugging
       printAST($$, 0, 1, "ast.json"); // Print AST to JSON file
       printf(COLOR_GREEN "PARSER: AST created successfully\n" COLOR_RESET);
+
+        CodegenContext* context = createCodegenContext(
+          (global_argv && global_argv[1]) ? global_argv[1] : "input.go",
+          "output.ic");
+        if (context && generateCode($$, context) == 0) {
+          printf(COLOR_GREEN "BACKEND: Stack IC written to output.ic\n" COLOR_RESET);
+        } else {
+          fprintf(stderr, COLOR_RED "BACKEND: Code generation failed\n" COLOR_RESET);
+        }
+        freeCodegenContext(context);
     }
     ;
 
@@ -89,11 +101,13 @@ type_decls:
     | TYPE IDENTIFIER STRUCT LBRACE field_decls RBRACE SEMICOLON type_decls
     { 
        $$ = createStructNode($2, $5);
+       $$->next = $8;
        printf(COLOR_BLUE "PARSER: Struct declaration parsed\n" COLOR_RESET); 
     }
     | TYPE IDENTIFIER INTERFACE LBRACE method_decls RBRACE SEMICOLON type_decls
     { 
        $$ = createInterfaceNode($2, $5);
+       $$->next = $8;
        printf(COLOR_BLUE "PARSER: Interface declaration parsed\n" COLOR_RESET); 
     }
     ;
@@ -402,7 +416,10 @@ expression:
 
 %%
 
+char** global_argv;
+
 int main(int argc, char **argv) {
+  global_argv = argv;
     if (argc > 1) {
         FILE *file = fopen(argv[1], "r");
         if (!file) {
@@ -411,6 +428,6 @@ int main(int argc, char **argv) {
         }
         yyin = file;
     }
-    yyparse();
-    return 0;
+      int parseResult = yyparse();
+      return parseResult || backendErrorFlag;
 }
